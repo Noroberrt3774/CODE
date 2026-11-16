@@ -1,0 +1,136 @@
+@page "/estudiantes"
+@using actX.Models
+@rendermode InteractiveServer
+
+<PageTitle>Estudiantes</PageTitle>
+
+<div class="container py-4">
+    <h1 class="mb-4">Administración de estudiantes</h1>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h2 class="h5 mb-0">Nuevo estudiante</h2>
+        </div>
+        <div class="card-body">
+            <EditForm EditContext="_contexto" OnValidSubmit="Guardar" FormName="formEstudiante">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <InputText id="nombre" class="form-control" placeholder="Nombre completo"
+                               @bind-Value="_nuevo.Nombre" />
+                    <ValidationMessage For="() => _nuevo.Nombre" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="correo" class="form-label">Correo</label>
+                    <InputText id="correo" type="email" class="form-control" placeholder="correo@ejemplo.com"
+                               @bind-Value="_nuevo.Correo" />
+                    <ValidationMessage For="() => _nuevo.Correo" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="calificacion" class="form-label">Calificación</label>
+                    <InputNumber id="calificacion" TValue="decimal" class="form-control" step="any"
+                                 min="0" max="10" placeholder="0 - 10"
+                                 @bind-Value="_nuevo.Calificacion" />
+                    <ValidationMessage For="() => _nuevo.Calificacion" class="text-danger" />
+                </div>
+
+                <button type="submit" class="btn btn-primary" disabled="@(!_formularioValido)">
+                    Guardar
+                </button>
+            </EditForm>
+        </div>
+    </div>
+
+    <h2 class="h4">Lista de estudiantes</h2>
+
+    @if (_estudiantes.Count == 0)
+    {
+        <p class="text-muted">No hay estudiantes registrados.</p>
+    }
+    else
+    {
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Calificación</th>
+                    <th scope="col" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var estudiante in _estudiantes)
+                {
+                    <tr @key="estudiante">
+                        <td>@estudiante.Nombre</td>
+                        <td>@estudiante.Correo</td>
+                        <td>@estudiante.Calificacion.ToString("0.##")</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    title="Eliminar estudiante" aria-label="Eliminar estudiante"
+                                    @onclick="() => Eliminar(estudiante)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                     fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <p class="text-muted small mb-0">Total de estudiantes en memoria: @_estudiantes.Count</p>
+</div>
+
+@code {
+    // Colección en memoria que almacena a los estudiantes
+    private readonly List<Estudiante> _estudiantes = new();
+
+    // Modelo del formulario
+    private Estudiante _nuevo = new();
+
+    // Contexto de edición y bandera que indica si el formulario es válido
+    private EditContext _contexto = default!;
+    private bool _formularioValido;
+
+    protected override void OnInitialized()
+    {
+        InicializarFormulario();
+    }
+
+    // Crea un contexto nuevo y valida cada vez que el usuario cambia un campo
+    private void InicializarFormulario()
+    {
+        _contexto = new EditContext(_nuevo);
+        _contexto.OnFieldChanged += (_, _) => _formularioValido = _contexto.Validate();
+        _formularioValido = false;
+    }
+
+    // Ejecutado por el botón Guardar solo cuando el formulario es válido
+    private void Guardar()
+    {
+        // Almacena una copia del estudiante en la colección en memoria
+        _estudiantes.Add(new Estudiante
+        {
+            Nombre = _nuevo.Nombre.Trim(),
+            Correo = _nuevo.Correo.Trim(),
+            Calificacion = _nuevo.Calificacion
+        });
+
+        // Limpia los campos para permitir una nueva captura
+        _nuevo = new Estudiante();
+        InicializarFormulario();
+    }
+
+    // Elimina al estudiante de la memoria y de la lista
+    private void Eliminar(Estudiante estudiante)
+    {
+        _estudiantes.Remove(estudiante);
+    }
+}
